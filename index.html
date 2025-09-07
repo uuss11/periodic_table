@@ -1,126 +1,200 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>البحث في الجدول الدوري — OpenRouter DeepSeek</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-  :root{--primary:#4f46e5;--danger:#ef4444;--border-radius:12px}
-  *{box-sizing:border-box}
-  body{font-family:Segoe UI, Tahoma, Arial; padding:20px; background:#f3f6ff}
-  .card{max-width:820px;margin:0 auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
-  input{width:100%;padding:12px;border-radius:8px;border:1px solid #e6e9f2}
-  button{margin-top:10px;padding:12px 18px;background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border:0;border-radius:8px;cursor:pointer}
-  pre{white-space:pre-wrap;word-break:break-word;background:#fbfcff;padding:14px;border-radius:8px;border:1px solid #eef2ff}
-  .warn{color:var(--danger)}
-  .spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,0,0,0.08);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>البحث في الجدول الدوري للعناصر</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+      --dark: #1e293b;
+      --danger: #ef4444;
+      --border-radius: 16px;
+      --box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    * { box-sizing: border-box; margin:0; padding:0; }
+    body {
+      font-family:'Segoe UI',sans-serif;
+      background:linear-gradient(135deg,#dbeafe,#f3e8ff,#e0f2fe);
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      padding:20px;
+      color:var(--dark);
+    }
+    .container { width:100%; max-width:800px; }
+    header { text-align:center; margin-bottom:30px; }
+    h1 { font-size:2.2rem; margin-bottom:10px; }
+
+    .search-card {
+      background:white;
+      padding:30px;
+      border-radius:var(--border-radius);
+      box-shadow:var(--box-shadow);
+      margin-bottom:30px;
+    }
+
+    .input-group { position:relative; margin-bottom:20px; }
+    .search-input {
+      width:100%;
+      padding:16px 20px 16px 50px;
+      border:2px solid #e2e8f0;
+      border-radius:12px;
+      font-size:1.1rem;
+    }
+    .search-icon {
+      position:absolute;
+      right:20px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#94a3b8;
+      font-size:1.2rem;
+    }
+    .search-btn {
+      width:100%;
+      padding:16px;
+      font-size:1.1rem;
+      font-weight:600;
+      background:var(--primary-gradient);
+      border:none;
+      color:white;
+      border-radius:12px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+    }
+
+    .result-card {
+      width:100%;
+      padding:30px;
+      border-radius:var(--border-radius);
+      box-shadow:var(--box-shadow);
+      min-height:200px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .result-content {
+      width:100%;
+      white-space:pre-wrap;
+      word-wrap:break-word;
+      font-size:1.1rem;
+      line-height:1.8;
+    }
+
+    .loading {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:20px;
+    }
+    .spinner {
+      width:50px;
+      height:50px;
+      border:5px solid rgba(99,102,241,0.2);
+      border-radius:50%;
+      border-top-color:var(--primary);
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
 </head>
 <body>
-<div class="card">
-  <h2>البحث في الجدول الدوري — DeepSeek V3.1 (free)</h2>
+  <div class="container">
+    <header>
+      <h1>البحث في الجدول الدوري للعناصر</h1>
+    </header>
 
-  <p>ملاحظة: لا تعرّض مفتاحك على الإنترنت. أنصح باستخدام proxy خادمي (مع مثال أدناه).</p>
+    <div class="search-card">
+      <div class="input-group">
+        <input type="text" id="searchInput" class="search-input" placeholder="اكتب اسم العنصر أو رمزه أو عدده الذري">
+        <span class="search-icon"><i class="fas fa-pencil-alt"></i></span>
+      </div>
+      <button onclick="searchElement()" class="search-btn">
+        <i class="fas fa-search"></i> بحث
+      </button>
+    </div>
 
-  <label>أدخل اسم العنصر أو رمزه أو رقمه الذري:</label>
-  <input id="q" placeholder="مثال: هيدروجين أو H أو 1" />
-  <div style="display:flex;gap:10px;">
-    <button id="btn">بحث</button>
-    <button id="btnProxy">بحث عبر proxy (موصى به)</button>
+    <div id="resultBox" class="result-card">
+      <div class="result-content" style="text-align:center; color:#64748b;">
+        <p>سيظهر هنا معلومات العنصر الكيميائي عند البحث</p>
+      </div>
+    </div>
   </div>
 
-  <h3>النتيجة:</h3>
-  <div id="result"><pre style="color:#6b7280">سيظهر هنا نص الإجابة</pre></div>
+  <script>
+    const apiKey = "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"; 
 
-  <h4>سجل الأخطاء (Console يظهر تفاصيل أوضح)</h4>
-  <pre id="log" style="height:120px;overflow:auto;background:#fff"></pre>
-</div>
+    async function searchElement() {
+      const query = document.getElementById('searchInput').value.trim();
+      const resultBox = document.getElementById('resultBox');
 
-<script>
-/* ------- إعدادات ------- */
-const USE_PROXY = true; 
-// إذا false سيحاول الاتصال مباشرةً بـ OpenRouter (قد تواجه CORS)، 
-// إذا true يستخدم endpoint '/api/openrouter' (انظر كود الخادم أدناه).
-const DIRECT_OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"; // احتفظ به كما هو
-const PROXY_ENDPOINT = "/api/openrouter"; // غيّره لو استخدمت مسار آخر على خادم
-const apiKey = "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"; // للتجربة فقط. لا ترفع هذا المفتاح لمستودع عام.
+      if (!query) {
+        resultBox.innerHTML = `<div class="result-content" style="text-align:center; color:${'var(--danger)'};">
+          ⚠️ الرجاء إدخال اسم العنصر أو رمزه أو عدده الذري.
+        </div>`;
+        return;
+      }
 
-/* ------- أدوات مساعدة ------- */
-function log(msg){ const L=document.getElementById('log'); L.textContent += msg + "\n"; L.scrollTop = L.scrollHeight; }
-function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+      resultBox.innerHTML = `<div class="loading">
+        <div class="spinner"></div>
+        <div>⏳ جاري البحث...</div>
+      </div>`;
 
-/* ------- الوظيفة الرئيسية ------- */
-async function doSearch(useProxy){
-  const q = document.getElementById('q').value.trim();
-  const resultEl = document.getElementById('result');
-  if(!q){ resultEl.innerHTML = `<pre class="warn">⚠️ الرجاء إدخال اسم العنصر أو رمزه أو عدده الذري.</pre>`; return; }
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "deepseek/deepseek-chat-v3.1:free",
+            messages: [
+              {
+                role: "system",
+                content: "أنت خبير في الكيمياء. قدم شرحًا مبسطًا ودقيقًا لكل عنصر كيميائي باللغة العربية."
+              },
+              {
+                role: "user",
+                content: query
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 300
+          })
+        });
 
-  resultEl.innerHTML = `<div style="display:flex;align-items:center;gap:12px"><div class="spinner"></div><div>جاري الاتصال بالنموذج...</div></div>`;
-  log(`بدء طلب — proxy=${useProxy} — query="${q}"`);
+        const data = await response.json();
+        console.log(data); // لفحص النتيجة في المتصفح
 
-  const body = {
-    model: "DeepSeek V3.1 (free)",
-    messages: [
-      { role: "system", content: "أنت خبير في الكيمياء. أعط شرحًا منظمًا وبسيطًا لأي عنصر يُعطى لك." },
-      { role: "user", content: `أعطني كل المعلومات المتاحة عن العنصر: ${q} باللغة العربية.` }
-    ]
-  };
+        if (data.error) {
+          resultBox.innerHTML = `<div class="result-content" style="color:var(--danger);">
+            ❌ خطأ: ${data.error.message}
+          </div>`;
+          return;
+        }
 
-  try{
-    const url = useProxy ? PROXY_ENDPOINT : DIRECT_OPENROUTER_ENDPOINT;
-    const headers = useProxy ? { "Content-Type":"application/json" } : { "Content-Type":"application/json", "Authorization": `Bearer ${apiKey}` };
+        const answer = data.choices?.[0]?.message?.content || "⚠️ لم يتم العثور على معلومات عن هذا العنصر.";
+        resultBox.innerHTML = `<div class="result-content">${answer}</div>`;
 
-    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
-    log(`HTTP ${resp.status} ${resp.statusText} — URL: ${url}`);
-
-    // اشطف نص الخطأ لو لم يكن OK
-    if(!resp.ok){
-      const text = await resp.text();
-      log("خطأ HTTP — response body: " + text);
-      // إذا كان خطأ CORS غالبًا ستحصل على فشل في fetch بدل هذا، لكن لا بأس
-      resultEl.innerHTML = `<pre class="warn">❌ خطأ من الخادم: ${resp.status} — راجع console أو سجل الأخطاء أدناه.</pre>`;
-      return;
+      } catch (err) {
+        console.error(err);
+        resultBox.innerHTML = `<div class="result-content" style="color:var(--danger);">
+          ❌ حدث خطأ أثناء الاتصال بالخادم.
+        </div>`;
+      }
     }
 
-    // حاول JSON ثم fallback إلى نص عادي
-    let data;
-    try{ data = await resp.json(); } catch(e){ const txt=await resp.text(); log("تعذر تحويل JSON — الرد النصي: " + txt); resultEl.innerHTML = `<pre>${escapeHtml(txt)}</pre>`; return; }
-
-    console.log("OpenRouter raw response:", data);
-    log("تم استقبال JSON من السيرفر. تفقد الـ console للمزيد.");
-
-    // التقط كل الاحتمالات للرد
-    let answer = null;
-    if(Array.isArray(data.choices) && data.choices.length > 0){
-      const ch = data.choices[0];
-      answer = ch.message?.content || ch.delta?.content || ch.text || (typeof ch === 'string' ? ch : JSON.stringify(ch));
-    } else if(data.output) {
-      answer = (typeof data.output === "string") ? data.output : JSON.stringify(data.output);
-    } else if(data.result) {
-      answer = JSON.stringify(data.result);
-    } else {
-      answer = JSON.stringify(data, null, 2);
-    }
-
-    // عرض آمن
-    resultEl.innerHTML = `<pre>${escapeHtml(answer)}</pre>`;
-  } catch(err){
-    console.error(err);
-    log("Exception: " + (err.message || err));
-    const msg = (err.message && err.message.includes('Failed to fetch')) ?
-      "خطأ في الاتصال. غالبًا مشكلة CORS أو عدم وصول للخادم (Proxy غير مفعل). أنصح بتشغيل proxy خادمي كما في التعليمات." :
-      "❌ حدث خطأ أثناء الاتصال: " + (err.message || err);
-    document.getElementById('result').innerHTML = `<pre class="warn">${escapeHtml(msg)}</pre>`;
-  }
-}
-
-/* ------- ربط الأزرار ------- */
-document.getElementById('btn').addEventListener('click', ()=>doSearch(false));
-document.getElementById('btnProxy').addEventListener('click', ()=>doSearch(true));
-document.getElementById('q').addEventListener('keypress', (e)=>{ if(e.key==='Enter') doSearch(USE_PROXY); });
-
-</script>
+    document.getElementById('searchInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') searchElement();
+    });
+  </script>
 </body>
 </html>
