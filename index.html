@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>البحث في الجدول الدوري — OpenRouter DeepSeek</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root{--primary:#4f46e5;--danger:#ef4444;--border-radius:12px}
+  *{box-sizing:border-box}
+  body{font-family:Segoe UI, Tahoma, Arial; padding:20px; background:#f3f6ff}
+  .card{max-width:820px;margin:0 auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+  input{width:100%;padding:12px;border-radius:8px;border:1px solid #e6e9f2}
+  button{margin-top:10px;padding:12px 18px;background:linear-gradient(90deg,#6366f1,#8b5cf6);color:#fff;border:0;border-radius:8px;cursor:pointer}
+  pre{white-space:pre-wrap;word-break:break-word;background:#fbfcff;padding:14px;border-radius:8px;border:1px solid #eef2ff}
+  .warn{color:var(--danger)}
+  .spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,0,0,0.08);border-top-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>البحث في الجدول الدوري — DeepSeek V3.1 (free)</h2>
+
+  <p>ملاحظة: لا تعرّض مفتاحك على الإنترنت. أنصح باستخدام proxy خادمي (مع مثال أدناه).</p>
+
+  <label>أدخل اسم العنصر أو رمزه أو رقمه الذري:</label>
+  <input id="q" placeholder="مثال: هيدروجين أو H أو 1" />
+  <div style="display:flex;gap:10px;">
+    <button id="btn">بحث</button>
+    <button id="btnProxy">بحث عبر proxy (موصى به)</button>
+  </div>
+
+  <h3>النتيجة:</h3>
+  <div id="result"><pre style="color:#6b7280">سيظهر هنا نص الإجابة</pre></div>
+
+  <h4>سجل الأخطاء (Console يظهر تفاصيل أوضح)</h4>
+  <pre id="log" style="height:120px;overflow:auto;background:#fff"></pre>
+</div>
+
+<script>
+/* ------- إعدادات ------- */
+const USE_PROXY = true; 
+// إذا false سيحاول الاتصال مباشرةً بـ OpenRouter (قد تواجه CORS)، 
+// إذا true يستخدم endpoint '/api/openrouter' (انظر كود الخادم أدناه).
+const DIRECT_OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"; // احتفظ به كما هو
+const PROXY_ENDPOINT = "/api/openrouter"; // غيّره لو استخدمت مسار آخر على خادم
+const apiKey = "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"; // للتجربة فقط. لا ترفع هذا المفتاح لمستودع عام.
+
+/* ------- أدوات مساعدة ------- */
+function log(msg){ const L=document.getElementById('log'); L.textContent += msg + "\n"; L.scrollTop = L.scrollHeight; }
+function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c])); }
+
+/* ------- الوظيفة الرئيسية ------- */
+async function doSearch(useProxy){
+  const q = document.getElementById('q').value.trim();
+  const resultEl = document.getElementById('result');
+  if(!q){ resultEl.innerHTML = `<pre class="warn">⚠️ الرجاء إدخال اسم العنصر أو رمزه أو عدده الذري.</pre>`; return; }
+
+  resultEl.innerHTML = `<div style="display:flex;align-items:center;gap:12px"><div class="spinner"></div><div>جاري الاتصال بالنموذج...</div></div>`;
+  log(`بدء طلب — proxy=${useProxy} — query="${q}"`);
+
+  const body = {
+    model: "DeepSeek V3.1 (free)",
+    messages: [
+      { role: "system", content: "أنت خبير في الكيمياء. أعط شرحًا منظمًا وبسيطًا لأي عنصر يُعطى لك." },
+      { role: "user", content: `أعطني كل المعلومات المتاحة عن العنصر: ${q} باللغة العربية.` }
+    ]
+  };
+
+  try{
+    const url = useProxy ? PROXY_ENDPOINT : DIRECT_OPENROUTER_ENDPOINT;
+    const headers = useProxy ? { "Content-Type":"application/json" } : { "Content-Type":"application/json", "Authorization": `Bearer ${apiKey}` };
+
+    const resp = await fetch(url, { method: "POST", headers, body: JSON.stringify(body) });
+    log(`HTTP ${resp.status} ${resp.statusText} — URL: ${url}`);
+
+    // اشطف نص الخطأ لو لم يكن OK
+    if(!resp.ok){
+      const text = await resp.text();
+      log("خطأ HTTP — response body: " + text);
+      // إذا كان خطأ CORS غالبًا ستحصل على فشل في fetch بدل هذا، لكن لا بأس
+      resultEl.innerHTML = `<pre class="warn">❌ خطأ من الخادم: ${resp.status} — راجع console أو سجل الأخطاء أدناه.</pre>`;
+      return;
+    }
+
+    // حاول JSON ثم fallback إلى نص عادي
+    let data;
+    try{ data = await resp.json(); } catch(e){ const txt=await resp.text(); log("تعذر تحويل JSON — الرد النصي: " + txt); resultEl.innerHTML = `<pre>${escapeHtml(txt)}</pre>`; return; }
+
+    console.log("OpenRouter raw response:", data);
+    log("تم استقبال JSON من السيرفر. تفقد الـ console للمزيد.");
+
+    // التقط كل الاحتمالات للرد
+    let answer = null;
+    if(Array.isArray(data.choices) && data.choices.length > 0){
+      const ch = data.choices[0];
+      answer = ch.message?.content || ch.delta?.content || ch.text || (typeof ch === 'string' ? ch : JSON.stringify(ch));
+    } else if(data.output) {
+      answer = (typeof data.output === "string") ? data.output : JSON.stringify(data.output);
+    } else if(data.result) {
+      answer = JSON.stringify(data.result);
+    } else {
+      answer = JSON.stringify(data, null, 2);
+    }
+
+    // عرض آمن
+    resultEl.innerHTML = `<pre>${escapeHtml(answer)}</pre>`;
+  } catch(err){
+    console.error(err);
+    log("Exception: " + (err.message || err));
+    const msg = (err.message && err.message.includes('Failed to fetch')) ?
+      "خطأ في الاتصال. غالبًا مشكلة CORS أو عدم وصول للخادم (Proxy غير مفعل). أنصح بتشغيل proxy خادمي كما في التعليمات." :
+      "❌ حدث خطأ أثناء الاتصال: " + (err.message || err);
+    document.getElementById('result').innerHTML = `<pre class="warn">${escapeHtml(msg)}</pre>`;
+  }
+}
+
+/* ------- ربط الأزرار ------- */
+document.getElementById('btn').addEventListener('click', ()=>doSearch(false));
+document.getElementById('btnProxy').addEventListener('click', ()=>doSearch(true));
+document.getElementById('q').addEventListener('keypress', (e)=>{ if(e.key==='Enter') doSearch(USE_PROXY); });
+
+</script>
+</body>
+</html>
